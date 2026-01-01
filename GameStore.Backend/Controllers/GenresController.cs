@@ -18,6 +18,7 @@ public class GenresController(GameStoreContext context) : ControllerBase
   {
     return Ok(await _context.Genres.ToListAsync());
   }
+
   // GET: api/genres/5
   [HttpGet("{id}")]
   public async Task<ActionResult<Genre>> GetGenre(int id)
@@ -25,6 +26,7 @@ public class GenresController(GameStoreContext context) : ControllerBase
     var genre = await _context.Genres.FindAsync(id);
     return genre is null ? NotFound() : Ok(genre);
   }
+
   // POST: api/genres/5
   [HttpPost]
   public async Task<ActionResult<Genre>> CreateGenre(Genre genre)
