@@ -14,15 +14,38 @@ public class GamesController(GameStoreContext context) : ControllerBase
 
   private readonly GameStoreContext _context = context;
 
+  private IQueryable<Game> BaseGameQuery()
+  {
+    return _context.Games.AsNoTracking().Include(g => g.Genre);
+  }
+
+  private static IQueryable<Game> ApplySorting(
+    IQueryable<Game> query, SortBy sortBy, OrderBy orderBy
+  )
+  {
+    return sortBy switch
+    {
+      SortBy.Price => orderBy == OrderBy.Desc ? query.OrderByDescending(order => order.Price) : query.OrderBy(order => order.Price),
+      SortBy.ReleaseDate => orderBy == OrderBy.Desc ? query.OrderByDescending(g => g.ReleaseDate) : query.OrderBy(g => g.ReleaseDate),
+      SortBy.Name => orderBy == OrderBy.Desc ? query.OrderByDescending(g => g.Name) : query.OrderBy(g => g.Name),
+      SortBy.Id => orderBy == OrderBy.Desc ? query.OrderByDescending(g => g.ID) : query.OrderBy(g => g.ID),
+      _ => query.OrderBy(order => order.ID)
+
+    };
+  }
+
+  private static IQueryable<Game> ApplyPagination(IQueryable<Game> query, int page = 1, int limit = 10)
+  {
+    return query.Skip((page - 1) * limit).Take(limit);
+  }
+
   // GET Games
   [HttpGet]
   // Various Operations on GET Data
-  public async Task<IActionResult> GetGames(int? genreID, string? search, decimal? minPrice,
+  public async Task<ActionResult<GameListDto>> GetGames(int? genreID, string? search, decimal? minPrice,
 decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int page = 1, int limit = 10)
   {
-    var query = _context.Games.Include(g => g.Genre).AsQueryable();
-
-    var totalCount = await query.CountAsync();
+    var query = BaseGameQuery().AsQueryable();
 
     if (page <= 0 || limit <= 0)
     {
@@ -48,31 +71,21 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
     }
 
     //Searching
-
     if (!string.IsNullOrWhiteSpace(search))
     {
       query = query.Where(g => g.Name.ToLower().Contains(search.ToLower()));
     }
 
+    var totalCount = await query.CountAsync();
+    query = ApplySorting(query, sortBy, orderBy);
+    query = ApplyPagination(query, page, limit);
 
-    var sortedQuery = query = sortBy switch
-    {
-      SortBy.Price => orderBy == OrderBy.Desc ? query.OrderByDescending(g => g.Price) : query.OrderBy(g => g.Price),
-      SortBy.ReleaseDate => orderBy == OrderBy.Desc ? query.OrderByDescending(g => g.ReleaseDate) : query.OrderBy(g => g.ReleaseDate),
-      SortBy.Name => orderBy == OrderBy.Desc ? query.OrderByDescending(g => g.Name) : query.OrderBy(g => g.Name),
-      SortBy.Id => orderBy == OrderBy.Desc ? query.OrderByDescending(g => g.ID) : query.OrderBy(g => g.ID),
-      _ => query.OrderBy(g => g.ID)
-    };
-
-    var sortedPagination = sortedQuery.Skip((page - 1) * limit).Take(limit);
-    var fetchGames = await sortedPagination.Select(game => new ResponseGameDto
+    var games = await query.Select(game => new GameListDto
     {
       Name = game.Name,
       ID = game.ID,
       Price = game.Price,
-      ReleaseDate = game.ReleaseDate,
       GenreName = game.Genre!.Name,
-      GenreID = game.Genre.ID
     }).ToListAsync();
     return Ok(new
     {
@@ -80,23 +93,32 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
       limit,
       totalCount,
       totalPages = (int)Math.Ceiling(totalCount / (double)limit),
-      items = fetchGames
+      items = games
     });
   }
 
   //GET by id
   [HttpGet("{id}")]
-  public async Task<ActionResult<Game>> GetGame(int id)
+  public async Task<ActionResult<GameDetailsDto>> GetGame(int id)
   {
-    var gameByID = await _context.Games.FindAsync(id);
-    if (gameByID == null)
+    var game = await _context.Games.Include(g => g.Genre).Where(g => g.ID == id).Select(g => new GameDetailsDto
+    {
+      Name = g.Name,
+      ID = g.ID,
+      Price = g.Price,
+      ReleaseDate = g.ReleaseDate,
+      GenreName = g.Genre!.Name,
+      GenreID = g.Genre.ID
+    }).FirstOrDefaultAsync();
+
+    if (game is null)
       return NotFound();
-    return Ok(gameByID);
+    return Ok(game);
   }
 
   //POST
   [HttpPost]
-  public async Task<ActionResult<Game>> CreateGame(CreateGameDto dto)
+  public async Task<ActionResult<GameDetailsDto>> CreateGame(CreateGameDto dto)
   {
     var genreExists = await _context.Genres.AnyAsync(genre => genre.ID == dto.GenreID);
     if (!genreExists)
@@ -107,13 +129,28 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
       Name = dto.Name,
       Price = dto.Price,
       ReleaseDate = dto.ReleaseDate,
-      GenreID = dto.GenreID
+      GenreID = dto.GenreID,
     };
 
 
     _context.Games.Add(game);
     await _context.SaveChangesAsync();
-    return CreatedAtAction(nameof(GetGames), new { ID = game.ID }, game);
+
+
+    var createdGame = BaseGameQuery()
+    .Where(g => g.ID == game.ID)
+    .Select(g => new GameDetailsDto
+    {
+      ID = g.ID,
+      Name = g.Name,
+      Price = g.Price,
+      ReleaseDate = g.ReleaseDate,
+      GenreID = g.GenreID,
+      GenreName = g.Genre!.Name
+    })
+    .FirstAsync();
+
+    return CreatedAtAction(nameof(GetGame), new { id = createdGame.Id }, createdGame);
   }
 
 
