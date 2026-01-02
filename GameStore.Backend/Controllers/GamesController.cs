@@ -2,12 +2,13 @@ using GameStore.Backend.Data;
 using GameStore.Backend.Dtos;
 using GameStore.Backend.Enums;
 using GameStore.Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 namespace GameStore.Backend.Controllers;
 
 [ApiController]
+
 [Route("api/games")]
 public class GamesController(GameStoreContext context) : ControllerBase
 {
@@ -19,6 +20,47 @@ public class GamesController(GameStoreContext context) : ControllerBase
     return _context.Games.AsNoTracking().Include(g => g.Genre);
   }
 
+
+  private static IQueryable<Game> ApplyFilters(IQueryable<Game> query, decimal? minPrice, decimal? maxPrice, int? genreID)
+  {
+    if (genreID.HasValue)
+    {
+      query = query.Where(g => g.GenreID == genreID!.Value);
+    }
+
+    if (minPrice.HasValue)
+    {
+      query = query.Where(min => min.Price >= minPrice.Value);
+    }
+
+    if (maxPrice.HasValue)
+    {
+      query = query.Where(max => max.Price <= maxPrice.Value);
+    }
+    return query;
+  }
+
+  private static IQueryable<Game> ApplySearching(IQueryable<Game> query, string searchTerm, SearchMode searchMode = SearchMode.Contains)
+  {
+    var term = searchTerm.Trim().ToLower();
+    if (string.IsNullOrWhiteSpace(searchTerm))
+      return query;
+    return searchMode switch
+    {
+
+      SearchMode.StartsWith =>
+      query.Where(search => search.Name.ToLower().StartsWith(term) || search.Genre!.Name.ToLower().StartsWith(term)),
+
+      SearchMode.EndsWith =>
+      query.Where(g =>
+      g.Name.ToLower().EndsWith(term) ||
+      g.Genre!.Name.ToLower().EndsWith(term)),
+
+      SearchMode.Exact => query.Where(search => search.Name.ToLower() == term || search.Genre!.Name.ToLower() == term),
+
+      _ => query.Where(search => search.Name.ToLower().Contains(term) || search.Genre!.Name.Contains(term))
+    };
+  }
   private static IQueryable<Game> ApplySorting(
     IQueryable<Game> query, SortBy sortBy, OrderBy orderBy
   )
@@ -36,6 +78,15 @@ public class GamesController(GameStoreContext context) : ControllerBase
 
   private static IQueryable<Game> ApplyPagination(IQueryable<Game> query, int page = 1, int limit = 10)
   {
+
+    if (page <= 0 || limit <= 0)
+    {
+      throw new ArgumentException("Invalid Page Value");
+    }
+    if (limit > 50)
+    {
+      limit = 50;
+    }
     return query.Skip((page - 1) * limit).Take(limit);
   }
 
@@ -43,41 +94,17 @@ public class GamesController(GameStoreContext context) : ControllerBase
   [HttpGet]
   // Various Operations on GET Data
   public async Task<ActionResult<GameListDto>> GetGames(int? genreID, string? search, decimal? minPrice,
-decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int page = 1, int limit = 10)
+decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int page = 1, int limit = 10, SearchMode searchMode = SearchMode.Contains)
   {
     var query = BaseGameQuery().AsQueryable();
 
-    if (page <= 0 || limit <= 0)
-    {
-      return BadRequest("Error Page number and limit must be greater than 0");
-    }
-    if (limit > 50)
-    {
-      limit = 50;
-    }
-    if (genreID.HasValue)
-    {
-      query = query.Where(g => g.GenreID == genreID.Value);
-    }
 
-    if (minPrice.HasValue)
-    {
-      query = query.Where(g => g.Price >= minPrice.Value);
-    }
 
-    if (maxPrice.HasValue)
-    {
-      query = query.Where(g => g.Price <= maxPrice.Value);
-    }
-
-    //Searching
-    if (!string.IsNullOrWhiteSpace(search))
-    {
-      query = query.Where(g => g.Name.ToLower().Contains(search.ToLower()));
-    }
+    query = ApplyFilters(query, minPrice, maxPrice, genreID);
+    query = ApplySearching(query, search!, searchMode);
+    query = ApplySorting(query, sortBy, orderBy);
 
     var totalCount = await query.CountAsync();
-    query = ApplySorting(query, sortBy, orderBy);
     query = ApplyPagination(query, page, limit);
 
     var games = await query.Select(game => new GameListDto
@@ -188,5 +215,13 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
     _context.Games.Remove(deleteGame);
     await _context.SaveChangesAsync();
     return NoContent();
+  }
+
+
+  [Authorize]
+  [HttpGet("jwt-test")]
+  public IActionResult JwtTest()
+  {
+    return Ok("JWT is working");
   }
 }
