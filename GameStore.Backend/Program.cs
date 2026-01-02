@@ -2,6 +2,11 @@ using GameStore.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using GameStore.Backend.Services;
+using GameStore.Backend.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +22,6 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<GameStoreContext>(options => options.UseSqlite("Data Source=GameStore.db"));
 
-
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY (this was missing)
@@ -31,7 +35,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
-
+app.UseMiddleware<ExceptionMiddleware>();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

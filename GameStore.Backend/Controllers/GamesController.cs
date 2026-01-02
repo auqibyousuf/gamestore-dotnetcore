@@ -10,10 +10,11 @@ namespace GameStore.Backend.Controllers;
 [ApiController]
 
 [Route("api/games")]
-public class GamesController(GameStoreContext context) : ControllerBase
+public class GamesController(GameStoreContext context, ILogger<GamesController> logger) : ControllerBase
 {
 
   private readonly GameStoreContext _context = context;
+  private readonly ILogger<GamesController> _logger = logger;
 
   private IQueryable<Game> BaseGameQuery()
   {
@@ -42,23 +43,23 @@ public class GamesController(GameStoreContext context) : ControllerBase
 
   private static IQueryable<Game> ApplySearching(IQueryable<Game> query, string searchTerm, SearchMode searchMode = SearchMode.Contains)
   {
-    var term = searchTerm.Trim().ToLower();
     if (string.IsNullOrWhiteSpace(searchTerm))
       return query;
+    var term = searchTerm.Trim().ToLower();
     return searchMode switch
     {
 
       SearchMode.StartsWith =>
-      query.Where(search => search.Name.ToLower().StartsWith(term) || search.Genre!.Name.ToLower().StartsWith(term)),
+      query.Where(search => search.Name.ToLower().StartsWith(term) || search.Genre != null && search.Genre.Name.ToLower().StartsWith(term)),
 
       SearchMode.EndsWith =>
-      query.Where(g =>
-      g.Name.ToLower().EndsWith(term) ||
-      g.Genre!.Name.ToLower().EndsWith(term)),
+      query.Where(search =>
+      search.Name.ToLower().EndsWith(term) || search.Genre != null &&
+      search.Genre.Name.ToLower().EndsWith(term)),
 
-      SearchMode.Exact => query.Where(search => search.Name.ToLower() == term || search.Genre!.Name.ToLower() == term),
+      SearchMode.Exact => query.Where(search => search.Name.ToLower() == term || search.Genre != null && search.Genre.Name.ToLower() == term),
 
-      _ => query.Where(search => search.Name.ToLower().Contains(term) || search.Genre!.Name.Contains(term))
+      _ => query.Where(search => search.Name.ToLower().Contains(term) || search.Genre != null && search.Genre.Name.Contains(term))
     };
   }
   private static IQueryable<Game> ApplySorting(
@@ -96,10 +97,8 @@ public class GamesController(GameStoreContext context) : ControllerBase
   public async Task<ActionResult<GameListDto>> GetGames(int? genreID, string? search, decimal? minPrice,
 decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int page = 1, int limit = 10, SearchMode searchMode = SearchMode.Contains)
   {
+    _logger.LogInformation("Fetching games list");
     var query = BaseGameQuery().AsQueryable();
-
-
-
     query = ApplyFilters(query, minPrice, maxPrice, genreID);
     query = ApplySearching(query, search!, searchMode);
     query = ApplySorting(query, sortBy, orderBy);
@@ -223,5 +222,11 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
   public IActionResult JwtTest()
   {
     return Ok("JWT is working");
+  }
+
+  [HttpGet("exception-test")]
+  public IActionResult ExceptionTest()
+  {
+    throw new Exception("This is a test exception");
   }
 }
