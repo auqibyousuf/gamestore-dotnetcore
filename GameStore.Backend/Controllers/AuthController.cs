@@ -1,6 +1,7 @@
 using GameStore.Backend.Data;
 using GameStore.Backend.Dtos;
 using GameStore.Backend.Models;
+using GameStore.Backend.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,7 @@ namespace GameStore.Backend.Controllers
             //Create user
             var user = new User
             {
+                Name = dto.Name,
                 Email = dto.Email,
                 Role = "User"
             };
@@ -40,14 +42,16 @@ namespace GameStore.Backend.Controllers
             return Ok(new
             {
                 user.Id,
+                user.Name,
                 user.Email,
                 user.Role
-
             });
         }
+
+
         //Login
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginUserDto dto)
+        public async Task<IActionResult> Login(LoginUserDto dto, JwtTokenService jwtTokenService)
         {
             var user = await _context.Users.FirstOrDefaultAsync(user => user.Email == dto.Email);
             if (user is null)
@@ -59,11 +63,10 @@ namespace GameStore.Backend.Controllers
             if (result == PasswordVerificationResult.Failed)
                 return Unauthorized("Invalid Email or Password");
 
+            var token = jwtTokenService.GenerateToken(user);
             return Ok(new
             {
-                user.Id,
-                user.Email,
-                user.Role
+                token
             });
         }
 

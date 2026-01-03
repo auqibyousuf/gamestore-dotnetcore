@@ -1,5 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using GameStore.Backend.Data;
 using GameStore.Backend.Dtos;
+using GameStore.Backend.Dtos.Common;
 using GameStore.Backend.Enums;
 using GameStore.Backend.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -139,10 +142,11 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
 
     if (game is null)
       return NotFound();
-    return Ok(game);
+    return Ok(BaseResponse<GameDetailsDto>.Ok(game, "Game Fetched Successfully"));
   }
 
   //POST
+
   [HttpPost]
   public async Task<ActionResult<GameDetailsDto>> CreateGame(CreateGameDto dto)
   {
@@ -196,14 +200,36 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
     if (existingGame == null)
       return NotFound();
 
+    var existingGameDetails = new
+    {
+      existingGame.Name,
+      existingGame.GenreID,
+      existingGame.Price,
+      existingGame.ReleaseDate
+    };
+
     existingGame.Name = dto.Name;
     existingGame.GenreID = dto.GenreID;
     existingGame.Price = dto.Price;
     existingGame.ReleaseDate = dto.ReleaseDate;
     await _context.SaveChangesAsync();
-    return NoContent();
+
+    var newGameDetails = new
+    {
+      existingGame.Name,
+      existingGame.GenreID,
+      existingGame.Price,
+      existingGame.ReleaseDate
+    };
+
+    return Ok(BaseResponse<object>.Ok(new
+    {
+      existingGameDetails,
+      newGameDetails
+    }, "Details Updated Successfully"));
   }
 
+  [Authorize(Policy = "AdminOnly")]
   [HttpDelete("{id}")]
   public async Task<IActionResult> DeleteGame(int id)
   {
@@ -211,22 +237,57 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
     if (deleteGame == null)
       return NotFound();
 
+    var deletedGame = new
+    {
+      deleteGame.ID,
+      deleteGame.Name,
+      deleteGame.Genre,
+    };
+
     _context.Games.Remove(deleteGame);
     await _context.SaveChangesAsync();
-    return NoContent();
+    return Ok(new DeletedGameDto
+    {
+      Message = $"Successfully Deleted: {deletedGame.Name}",
+      Id = deletedGame.ID,
+      Name = deletedGame.Name
+    });
   }
 
 
   [Authorize]
   [HttpGet("jwt-test")]
-  public IActionResult JwtTest()
+  public IActionResult WhoAmI()
   {
-    return Ok("JWT is working");
+    _logger.LogInformation("Is Authenticated: {Auth}", User.Identity?.IsAuthenticated);
+    return Ok("Check logs");
   }
 
-  [HttpGet("exception-test")]
-  public IActionResult ExceptionTest()
+
+  [Authorize]
+  [HttpGet("Claims")]
+
+  public IActionResult ViewClaims()
   {
-    throw new Exception("This is a test exception");
+    foreach (var claim in User.Claims)
+    {
+      _logger.LogInformation("Claim: {Type} = {Value}", claim.Type, claim.Value);
+    }
+    return Ok("check logs");
+  }
+
+  [Authorize]
+  [HttpGet("user info")]
+
+  public IActionResult ViewUserDetails()
+  {
+    var userID = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+    var email = User.FindFirst(ClaimTypes.Email)?.Value;
+
+    _logger.LogInformation("UserID={userID} Role={role} Email={email}", userID, role, email);
+    return Ok(new { userID, email, role });
   }
 }

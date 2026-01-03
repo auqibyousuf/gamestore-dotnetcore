@@ -1,6 +1,5 @@
 using GameStore.Backend.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -21,7 +20,30 @@ builder.AddGameStoreDb();
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<GameStoreContext>(options => options.UseSqlite("Data Source=GameStore.db"));
+builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddAuthentication(options =>
+{
+  options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+  options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+  options.TokenValidationParameters = new TokenValidationParameters
+  {
+    ValidateAudience = true,
+    ValidateIssuer = true,
+    ValidateLifetime = true,
+    ValidateIssuerSigningKey = true,
+    ValidAudience = builder.Configuration["Jwt:Audience"],
+    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
 
+  };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+  options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY (this was missing)
