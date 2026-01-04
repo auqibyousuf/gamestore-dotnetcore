@@ -11,4 +11,6 @@ public class GameStoreContext(DbContextOptions<GameStoreContext> options) : DbCo
 
   //User context
   public DbSet<User> Users => Set<User>();
+
+  public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 }
