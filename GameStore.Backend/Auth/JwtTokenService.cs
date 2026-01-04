@@ -1,16 +1,14 @@
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using GameStore.Backend.Models;
 using Microsoft.IdentityModel.Tokens;
 
-namespace GameStore.Backend.Services;
+namespace GameStore.Backend.Auth;
 
-public class JwtTokenService(IConfiguration configuration, ILogger<JwtTokenService> logger)
+public class JwtTokenService(IConfiguration configuration)
 {
     private readonly IConfiguration _configuration = configuration;
-    private readonly ILogger<JwtTokenService> _logger = logger;
 
     public string GenerateToken(User user)
     {

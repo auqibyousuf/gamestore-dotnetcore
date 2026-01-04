@@ -4,8 +4,8 @@ using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using GameStore.Backend.Services;
 using GameStore.Backend.Middleware;
+using GameStore.Backend.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,10 +40,8 @@ builder.Services.AddAuthentication(options =>
   };
 });
 
-builder.Services.AddAuthorization(options =>
-{
-  options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-});
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY (this was missing)

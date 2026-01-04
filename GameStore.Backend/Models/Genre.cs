@@ -1,5 +1,3 @@
-using System;
-
 namespace GameStore.Backend.Models;
 
 public class Genre
