@@ -5,6 +5,7 @@ using GameStore.Backend.Dtos;
 using GameStore.Backend.Dtos.Common;
 using GameStore.Backend.Enums;
 using GameStore.Backend.Models;
+using GameStore.Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,11 +14,12 @@ namespace GameStore.Backend.Controllers;
 [ApiController]
 
 [Route("api/games")]
-public class GamesController(GameStoreContext context, ILogger<GamesController> logger) : ControllerBase
+public class GamesController(GameStoreContext context, ILogger<GamesController> logger, IFileStorageService fileStorageService) : ControllerBase
 {
 
   private readonly GameStoreContext _context = context;
   private readonly ILogger<GamesController> _logger = logger;
+  private readonly IFileStorageService _fileStorageService = fileStorageService;
 
   private IQueryable<Game> BaseGameQuery()
   {
@@ -115,6 +117,7 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
       ID = game.ID,
       Price = game.Price,
       GenreName = game.Genre!.Name,
+      ImageUrl = game.Media.OrderBy(m => m.Id).Select(m => m.Url).FirstOrDefault()
     }).ToListAsync();
     return Ok(new
     {
@@ -289,5 +292,34 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
 
     _logger.LogInformation("UserID={userID} Role={role} Email={email}", userID, role, email);
     return Ok(new { userID, email, role });
+  }
+
+  [HttpPost("{gameId}/media")]
+  public async Task<IActionResult> AddGameMedia(int gameId, [FromForm] UploadGameMediaDto dto)
+  {
+    var gameExists = await _context.Games.AnyAsync(g => g.ID == gameId);
+
+    if (!gameExists)
+      return NotFound("Game not found");
+
+    var uploadResult = await _fileStorageService.SaveAsync(dto.File);
+
+    var media = new GameMedia
+    {
+      GameId = gameId,
+      Url = uploadResult.Url,
+      OriginalFileName = dto.File.FileName,
+      FileType = Path.GetExtension(dto.File.FileName).ToLower()
+    };
+
+    _context.GameMedia.Add(media);
+    await _context.SaveChangesAsync();
+
+    return Ok(BaseResponse<object>.Ok(new
+    {
+      media.Id,
+      media.Url,
+      media.OriginalFileName
+    }, "File Uploaded Successfully"));
   }
 }

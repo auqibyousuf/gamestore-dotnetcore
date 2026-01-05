@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using GameStore.Backend.Middleware;
 using GameStore.Backend.Auth;
+using GameStore.Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,11 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+
+
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY (this was missing)
