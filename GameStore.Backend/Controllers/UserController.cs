@@ -46,7 +46,7 @@ namespace GameStore.Backend.Controllers
 
         //--------User Profile--------
         [Authorize]
-        [HttpGet("/me")]
+        [HttpGet("me")]
         public async Task<ActionResult> MyProfile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

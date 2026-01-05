@@ -43,6 +43,30 @@ namespace GameStore.Backend.Data.Migrations
                     b.ToTable("Games");
                 });
 
+            modelBuilder.Entity("GameStore.Backend.Models.GameMedia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("GameMedia");
+                });
+
             modelBuilder.Entity("GameStore.Backend.Models.Genre", b =>
                 {
                     b.Property<int>("ID")
@@ -122,6 +146,17 @@ namespace GameStore.Backend.Data.Migrations
                     b.Navigation("Genre");
                 });
 
+            modelBuilder.Entity("GameStore.Backend.Models.GameMedia", b =>
+                {
+                    b.HasOne("GameStore.Backend.Models.Game", "Game")
+                        .WithMany("Media")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+                });
+
             modelBuilder.Entity("GameStore.Backend.Models.RefreshToken", b =>
                 {
                     b.HasOne("GameStore.Backend.Models.User", "User")
@@ -131,6 +166,11 @@ namespace GameStore.Backend.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GameStore.Backend.Models.Game", b =>
+                {
+                    b.Navigation("Media");
                 });
 #pragma warning restore 612, 618
         }
