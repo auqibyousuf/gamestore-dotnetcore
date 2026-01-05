@@ -8,4 +8,5 @@ public class GameListDto
     public string Name { get; set; } = null!;
     public decimal Price { get; set; }
     public string GenreName { get; set; } = "";
+    public string? ImageUrl { get; set; }
 }

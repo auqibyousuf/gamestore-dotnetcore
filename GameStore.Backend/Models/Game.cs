@@ -21,4 +21,6 @@ public class Game
 
   [Required]
   public DateOnly ReleaseDate { get; set; }
+
+  public ICollection<GameMedia> Media {get; set;} = [];
 }
