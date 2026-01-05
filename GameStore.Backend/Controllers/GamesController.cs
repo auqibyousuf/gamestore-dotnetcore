@@ -23,7 +23,7 @@ public class GamesController(GameStoreContext context, ILogger<GamesController> 
 
   private IQueryable<Game> BaseGameQuery()
   {
-    return _context.Games.AsNoTracking().Include(g => g.Genre);
+    return _context.Games.AsNoTracking().Include(g => g.Genre).Include(g => g.Media); ;
   }
 
 
@@ -87,7 +87,7 @@ public class GamesController(GameStoreContext context, ILogger<GamesController> 
 
     if (page <= 0 || limit <= 0)
     {
-      throw new ArgumentException("Invalid Page Value");
+      return query;
     }
     if (limit > 50)
     {
@@ -117,16 +117,17 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
       ID = game.ID,
       Price = game.Price,
       GenreName = game.Genre!.Name,
-      ImageUrl = game.Media.OrderBy(m => m.Id).Select(m => m.Url).FirstOrDefault()
+      ImageUrl = game.Media.Where(m => m.IsPrimary).Select(m => m.Url).FirstOrDefault()
     }).ToListAsync();
-    return Ok(new
-    {
-      page,
-      limit,
-      totalCount,
-      totalPages = (int)Math.Ceiling(totalCount / (double)limit),
-      items = games
-    });
+    return Ok(BaseResponse<object>.Ok(
+      new
+      {
+        page,
+        limit,
+        totalCount,
+        totalPages = (int)Math.Ceiling(totalCount / (double)limit),
+        items = games
+      }, "Games fetched successfully"));
   }
 
   //GET by id
@@ -140,11 +141,12 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
       Price = g.Price,
       ReleaseDate = g.ReleaseDate,
       GenreName = g.Genre!.Name,
-      GenreID = g.Genre.ID
+      GenreID = g.Genre.ID,
+      ImageUrl = g.Media.Where(m => m.IsPrimary).Select(m => m.Url).FirstOrDefault()
     }).FirstOrDefaultAsync();
 
     if (game is null)
-      return NotFound();
+      return NotFound(BaseResponse<object>.Fail("Game not found"));
     return Ok(BaseResponse<GameDetailsDto>.Ok(game, "Game Fetched Successfully"));
   }
 
@@ -155,7 +157,7 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
   {
     var genreExists = await _context.Genres.AnyAsync(genre => genre.ID == dto.GenreID);
     if (!genreExists)
-      return BadRequest("Invalid GenreID");
+      return BadRequest(BaseResponse<object>.Fail("Invalid GenreID"));
 
     var game = new Game
     {
@@ -170,7 +172,7 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
     await _context.SaveChangesAsync();
 
 
-    var createdGame = BaseGameQuery()
+    var createdGame = await BaseGameQuery()
     .Where(g => g.ID == game.ID)
     .Select(g => new GameDetailsDto
     {
@@ -183,7 +185,7 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
     })
     .FirstAsync();
 
-    return CreatedAtAction(nameof(GetGame), new { id = createdGame.Id }, createdGame);
+    return CreatedAtAction(nameof(GetGame), new { id = createdGame.ID }, BaseResponse<GameDetailsDto>.Ok(createdGame, "Game created successfully"));
   }
 
 
@@ -197,11 +199,11 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
     var genreExists = await _context.Genres.AnyAsync(g => g.ID == dto.GenreID);
 
     if (!genreExists)
-      return BadRequest("Invalid GenreId");
+      return BadRequest(BaseResponse<object>.Fail("Invalid GenreID"));
 
     var existingGame = await _context.Games.FindAsync(id);
     if (existingGame == null)
-      return NotFound();
+      return NotFound(BaseResponse<object>.Fail("Not found"));
 
     var existingGameDetails = new
     {
@@ -238,7 +240,7 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
   {
     var deleteGame = await _context.Games.FindAsync(id);
     if (deleteGame == null)
-      return NotFound();
+      return NotFound(BaseResponse<object>.Fail("Not found"));
 
     var deletedGame = new
     {
@@ -249,12 +251,11 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
 
     _context.Games.Remove(deleteGame);
     await _context.SaveChangesAsync();
-    return Ok(new DeletedGameDto
+    return Ok(BaseResponse<object>.Ok(new DeletedGameDto
     {
-      Message = $"Successfully Deleted: {deletedGame.Name}",
       Id = deletedGame.ID,
       Name = deletedGame.Name
-    });
+    }, $"Successfully Deleted:{deletedGame}"));
   }
 
 
@@ -301,7 +302,8 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
 
     if (!gameExists)
       return NotFound("Game not found");
-
+    var hasPrimary = await _context.GameMedia
+        .AnyAsync(m => m.GameId == gameId && m.IsPrimary);
     var uploadResult = await _fileStorageService.SaveAsync(dto.File);
 
     var media = new GameMedia
@@ -309,7 +311,8 @@ decimal? maxPrice, SortBy sortBy = SortBy.Id, OrderBy orderBy = OrderBy.Asc, int
       GameId = gameId,
       Url = uploadResult.Url,
       OriginalFileName = dto.File.FileName,
-      FileType = Path.GetExtension(dto.File.FileName).ToLower()
+      FileType = Path.GetExtension(dto.File.FileName).ToLower(),
+      IsPrimary = !hasPrimary
     };
 
     _context.GameMedia.Add(media);

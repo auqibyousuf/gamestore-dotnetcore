@@ -1,5 +1,7 @@
 using System;
 using GameStore.Backend.Data;
+using GameStore.Backend.Dtos;
+using GameStore.Backend.Dtos.Common;
 using GameStore.Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,9 +16,10 @@ public class GenresController(GameStoreContext context) : ControllerBase
 
   // PUT: api/genres
   [HttpGet]
-  public async Task<ActionResult<List<Genre>>> GetGenres()
+  public async Task<ActionResult<BaseResponse<List<Genre>>>> GetGenres()
   {
-    return Ok(await _context.Genres.ToListAsync());
+    var genre = await _context.Genres.AsNoTracking().ToListAsync();
+    return Ok(BaseResponse<object>.Ok(genre, "Genre Fetched"));
   }
 
   // GET: api/genres/5
@@ -24,32 +27,43 @@ public class GenresController(GameStoreContext context) : ControllerBase
   public async Task<ActionResult<Genre>> GetGenre(int id)
   {
     var genre = await _context.Genres.FindAsync(id);
-    return genre is null ? NotFound() : Ok(genre);
+    return genre is null ? NotFound(BaseResponse<object>.Fail("Genre Not found")) : Ok(BaseResponse<object>.Ok(genre, "Genre Fetched"));
   }
 
   // POST: api/genres/5
   [HttpPost]
-  public async Task<ActionResult<Genre>> CreateGenre(Genre genre)
+  public async Task<ActionResult<Genre>> CreateGenre(CreateGenreDto dto)
   {
+
+    var genreExists = await _context.Genres.AnyAsync(g => g.Name == dto.Name);
+    if (genreExists)
+      return BadRequest(BaseResponse<object>.Fail("Genre already exists"));
+    var genre = new Genre
+    {
+      Name = dto.Name
+    };
     _context.Genres.Add(genre);
     await _context.SaveChangesAsync();
-    return CreatedAtAction(nameof(GetGenres), new { id = genre.ID }, genre);
+    return CreatedAtAction(nameof(GetGenre), new { id = genre.ID }, BaseResponse<Genre>.Ok(genre, "Genre created"));
   }
 
   // PUT: api/genres/5
   [HttpPut("{id}")]
-  public async Task<IActionResult> UpdateGenre(int id, Genre updatedGenre)
+  public async Task<IActionResult> UpdateGenre(int id, UpdateGenreDto dto)
   {
-    if (id != updatedGenre.ID)
-      return BadRequest();
+    if (id != dto.ID)
+      return BadRequest(BaseResponse<object>.Fail("Id not found"));
 
     var existingGenre = await _context.Genres.FindAsync(id);
     if (existingGenre is null)
-      return NotFound();
-
-    existingGenre.Name = updatedGenre.Name;
+      return NotFound(BaseResponse<object>.Fail("Genre Not found"));
+    existingGenre.Name = dto.Name;
     await _context.SaveChangesAsync();
-    return NoContent();
+    return Ok(BaseResponse<object>.Ok(new
+    {
+      existingGenre.ID,
+      existingGenre.Name
+    }, "Genre Updated"));
   }
 
   // DELETE: api/genres/5
@@ -58,9 +72,13 @@ public class GenresController(GameStoreContext context) : ControllerBase
   {
     var genre = await _context.Genres.FindAsync(id);
     if (genre is null)
-      return NotFound();
+      return NotFound(BaseResponse<object>.Fail("Genre not found"));
     _context.Genres.Remove(genre);
     await _context.SaveChangesAsync();
-    return NoContent();
+    return Ok(BaseResponse<object>.Ok(new
+    {
+      genre.ID,
+      genre.Name
+    }, "Deleted Successfully"));
   }
 }
