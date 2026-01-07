@@ -1,9 +1,7 @@
-using System;
-
 namespace GameStore.Backend.Dtos.Basket;
 
-public class BasketDto
+public class BasketResponseDto
 {
+    public decimal Total { get; set; }
     public List<BasketItemDto> Items { get; set; } = [];
-    public decimal Total {get; set;}
 }
