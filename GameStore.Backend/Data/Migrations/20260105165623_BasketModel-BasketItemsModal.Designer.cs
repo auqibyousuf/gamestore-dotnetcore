@@ -3,6 +3,7 @@ using System;
 using GameStore.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameStore.Backend.Data.Migrations
 {
     [DbContext(typeof(GameStoreContext))]
-    partial class GameStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20260105165623_BasketModel-BasketItemsModal")]
+    partial class BasketModelBasketItemsModal
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
@@ -48,7 +51,7 @@ namespace GameStore.Backend.Data.Migrations
                     b.Property<int>("BasketID")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("GameId")
+                    b.Property<int>("GameID")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Quantity")
@@ -61,7 +64,7 @@ namespace GameStore.Backend.Data.Migrations
 
                     b.HasIndex("BasketID");
 
-                    b.HasIndex("GameId");
+                    b.HasIndex("GameID");
 
                     b.ToTable("BasketItems");
                 });
@@ -212,7 +215,7 @@ namespace GameStore.Backend.Data.Migrations
 
                     b.HasOne("GameStore.Backend.Models.Game", "Game")
                         .WithMany()
-                        .HasForeignKey("GameId")
+                        .HasForeignKey("GameID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

@@ -48,6 +48,7 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<BasketService>();
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY (this was missing)

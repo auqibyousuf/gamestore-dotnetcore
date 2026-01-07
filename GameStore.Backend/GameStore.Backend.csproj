@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Dtos/Basket/" />
     <Folder Include="Enums/" />
     <Folder Include="Helpers/" />
     <Folder Include="Middleware/" />
