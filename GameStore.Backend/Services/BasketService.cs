@@ -7,21 +7,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GameStore.Backend.Services;
 
-public class BasketService(GameStoreContext context)
+public class BasketService(GameStoreContext context, ILogger<BasketService> logger)
 {
 
     private readonly GameStoreContext _context = context;
+    private readonly ILogger<BasketService> _logger = logger;
 
     public async Task<BasketResponseDto> UpsertBasketItemAsync(int userId, int gameId, int qty)
     {
+
         if (qty < 0)
         {
             throw new ArgumentException("Quantity cannot be less than 0");
         }
-        var basket = await _context.Baskets.Include(basket => basket.Items).ThenInclude(g => g.Game).FirstOrDefaultAsync(user => user.UserId == userId);
-
+        var basket = await _context.Baskets.Include(basket => basket.Items).ThenInclude(i => i.Game).ThenInclude(g => g.Media).FirstOrDefaultAsync(user => user.UserId == userId);
+        _logger.LogInformation(
+            "Upsert basket item started. UserId={UserId}, GameId={GameId}, Qty={Qty}",
+            userId, gameId, qty);
         if (basket == null)
         {
+            _logger.LogInformation(
+    "Basket not found for UserId={UserId}. Creating new basket.",
+    userId);
             basket = new Basket
             {
                 UserId = userId
@@ -36,11 +43,15 @@ public class BasketService(GameStoreContext context)
         {
             if (qty == 0)
             {
+                _logger.LogInformation(
+    "Removing game {GameId} from basket for UserId={UserId}",
+    gameId, userId);
                 _context.BasketItems.Remove(existingItem);
             }
             else
             {
                 existingItem.Quantity = qty;
+                _logger.LogInformation("Updated basket item. UserId={UserId}, GameId={GameId}, Qty={Qty}", userId, gameId, qty);
             }
         }
 
@@ -78,6 +89,7 @@ public class BasketService(GameStoreContext context)
 
     public async Task<BasketResponseDto> GetBasketAsync(int userId)
     {
+        _logger.LogInformation("Fetching basket for UserId={UserId}", userId);
         var basket = await _context.Baskets
             .Include(b => b.Items)
                 .ThenInclude(i => i.Game)
@@ -86,6 +98,7 @@ public class BasketService(GameStoreContext context)
 
         if (basket == null)
         {
+            _logger.LogInformation("No basket found for UserId={UserId}", userId);
             return new BasketResponseDto
             {
                 Items = [],

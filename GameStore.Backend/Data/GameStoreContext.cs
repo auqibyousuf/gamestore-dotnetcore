@@ -17,4 +17,6 @@ public class GameStoreContext(DbContextOptions<GameStoreContext> options) : DbCo
   public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
   public DbSet<Basket> Baskets => Set<Basket>();
   public DbSet<BasketItem> BasketItems => Set<BasketItem>();
+  public DbSet<Order> Orders => Set<Order>();
+  public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 }
