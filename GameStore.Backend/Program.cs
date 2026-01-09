@@ -7,6 +7,7 @@ using System.Text;
 using GameStore.Backend.Middleware;
 using GameStore.Backend.Auth;
 using GameStore.Backend.Services;
+using GameStore.Backend.Services.Payments;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<BasketService>();
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<IPaymentProvider, ManualPaymentProvider>();
+builder.Services.AddScoped<PaymentService>();
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY (this was missing)

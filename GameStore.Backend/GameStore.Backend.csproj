@@ -23,7 +23,6 @@
     <Folder Include="Dtos/Orders/" />
     <Folder Include="Helpers/" />
     <Folder Include="Middleware/" />
-    <Folder Include="Services/" />
     <Folder Include="wwwroot/" />
   </ItemGroup>
 

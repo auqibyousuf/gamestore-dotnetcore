@@ -19,4 +19,5 @@ public class GameStoreContext(DbContextOptions<GameStoreContext> options) : DbCo
   public DbSet<BasketItem> BasketItems => Set<BasketItem>();
   public DbSet<Order> Orders => Set<Order>();
   public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+  public DbSet<Payment> Payments => Set<Payment>();
 }
