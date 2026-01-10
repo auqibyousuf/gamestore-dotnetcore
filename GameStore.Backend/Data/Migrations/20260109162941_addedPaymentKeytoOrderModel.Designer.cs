@@ -3,6 +3,7 @@ using System;
 using GameStore.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GameStore.Backend.Data.Migrations
 {
     [DbContext(typeof(GameStoreContext))]
-    partial class GameStoreContextModelSnapshot : ModelSnapshot
+    [Migration("20260109162941_addedPaymentKeytoOrderModel")]
+    partial class addedPaymentKeytoOrderModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.1");
@@ -239,7 +242,8 @@ namespace GameStore.Backend.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("OrderId")
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -376,8 +380,8 @@ namespace GameStore.Backend.Data.Migrations
             modelBuilder.Entity("GameStore.Backend.Models.Payment", b =>
                 {
                     b.HasOne("GameStore.Backend.Models.Order", "Order")
-                        .WithMany("Payments")
-                        .HasForeignKey("OrderId")
+                        .WithOne("Payment")
+                        .HasForeignKey("GameStore.Backend.Models.Payment", "OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -417,7 +421,8 @@ namespace GameStore.Backend.Data.Migrations
                 {
                     b.Navigation("Items");
 
-                    b.Navigation("Payments");
+                    b.Navigation("Payment")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

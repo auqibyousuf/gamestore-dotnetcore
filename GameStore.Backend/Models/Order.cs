@@ -18,4 +18,5 @@ public class Order
     public DateTime? PaidAt { get; set; }
 
     public List<OrderItem> Items { get; set; } = [];
+    public ICollection<Payment> Payments { get; set; } = null!;
 }

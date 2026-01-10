@@ -1,8 +1,6 @@
-using System;
-
 namespace GameStore.Backend.Enums;
 
-public enum OrderPaymentStatus
+public enum PaymentStatus
 {
     Pending,
     Paid,

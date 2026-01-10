@@ -1,6 +1,7 @@
 using GameStore.Backend.Data;
 using GameStore.Backend.Dtos.Admin;
 using GameStore.Backend.Dtos.Orders;
+using GameStore.Backend.Dtos.Orders.Timeline;
 using GameStore.Backend.Enums;
 using GameStore.Backend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -318,5 +319,77 @@ public class OrderService(GameStoreContext context, ILogger<OrderService> logger
         };
 
         return dto;
+    }
+
+    //Order Timeline
+    public async Task<List<TimelineDto>> GetOrderTimelineAsync(
+    int orderId,
+    int userId,
+    string role
+)
+    {
+        var order = await _context.Orders.Include(o => o.Payments).FirstOrDefaultAsync(o => o.Id == orderId);
+        if (order is null)
+
+            throw new InvalidOperationException("No Orders Found");
+
+        if (role != "Admin" && order.UserId != userId)
+            throw new UnauthorizedAccessException("You are not Authorized");
+
+        var timeline = new List<TimelineDto>();
+
+        // 1️⃣ ORDER CREATED EVENT (ONCE)
+        timeline.Add(new TimelineDto
+        {
+            Timestamp = order.CreatedAt,
+            EventType = "ORDER_CREATED",
+            Status = order.PaymentStatus,
+            Provider = "N/A",
+            Amount=order.TotalAmount,
+            Message = "Order Created"
+        });
+
+        // 2️⃣ PAYMENT EVENTS
+        foreach (var payment in order.Payments)
+        {
+            string eventType;
+            string message;
+
+            if(payment.Status == PaymentStatus.Pending.ToString())
+            {
+                eventType = "PAYMENT_INITIATED";
+                message = "Payment Initiated";
+            }
+
+            else if (payment.Status == PaymentStatus.Paid.ToString())
+            {
+                eventType = "PAYMENT_SUCCESS";
+                message = "Payment Success";
+            }
+            else if (payment.Status == PaymentStatus.Failed.ToString())
+            {
+                eventType = "PAYMENT_FAILED";
+                message = string.IsNullOrWhiteSpace(payment.FailureReason)
+                    ? "Payment failed"
+                    : $"Payment failed: {payment.FailureReason}";
+            }
+            else
+            {
+                eventType= "PAYMENT_UNKNOWN";
+                message = "Unknown Payment state";
+            }
+            timeline.Add(new TimelineDto
+            {
+                Timestamp = payment.CompletedAt ?? payment.CreatedAt,
+                EventType = eventType,
+                Status = payment.Status,
+                Provider = payment.Provider,
+                Amount = payment.Amount,
+                Message = message
+            });
+        }
+        // 3️⃣ SORT: NEWEST FIRST
+        return timeline
+            .OrderByDescending(t => t.Timestamp).ToList();
     }
 }
