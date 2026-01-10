@@ -31,19 +31,23 @@ public class PaymentService(GameStoreContext context, ILogger<PaymentService> lo
 
         var getPayment = await _paymentProvider.CreatePaymentAsync(order.Id, order.UserId, order.TotalAmount);
 
-        var payment = new Payment
-        {
-            OrderId = orderId,
-            UserId = userId,
-            Amount = getPayment.Amount,
-            Provider = getPayment.Provider,
-            Status = getPayment.Status,
-            ProviderPaymentId = getPayment.ProviderPaymentId,
-            CreatedAt = DateTime.UtcNow
-        };
+        if (string.IsNullOrWhiteSpace(getPayment.Provider))
+            throw new InvalidOperationException("Payment provider did not return provider name");
+        if (string.IsNullOrWhiteSpace(getPayment.Status))
+            throw new InvalidOperationException("Payment provider did not return status");
+        // var payment = new Payment
+        // {
+        //     OrderId = orderId,
+        //     UserId = userId,
+        //     Amount = getPayment.Amount,
+        //     Provider = getPayment.Provider,
+        //     Status = getPayment.Status,
+        //     ProviderPaymentId = getPayment.ProviderPaymentId,
+        //     CreatedAt = DateTime.UtcNow
+        // };
 
-        _context.Payments.Add(payment);
-        await _context.SaveChangesAsync();
+        // _context.Payments.Add(payment);
+        // await _context.SaveChangesAsync();
 
         return new PaymentResultDto
         {

@@ -8,6 +8,7 @@ using GameStore.Backend.Middleware;
 using GameStore.Backend.Auth;
 using GameStore.Backend.Services;
 using GameStore.Backend.Services.Payments;
+using GameStore.Backend.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,14 +49,28 @@ builder.Services.AddAuthorizationBuilder()
 
 
 builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+
 builder.Services.AddScoped<BasketService>();
 builder.Services.AddScoped<OrderService>();
-builder.Services.AddScoped<IPaymentProvider, ManualPaymentProvider>();
 builder.Services.AddScoped<PaymentService>();
+
+builder.Services.Configure<RazorSettings>(builder.Configuration.GetSection("Razorpay"));
+
+var paymentProvider = builder.Configuration["Payment:Provider"];
+if (paymentProvider == "Razorpay")
+{
+  builder.Services.AddScoped<IPaymentProvider, RazorPaymentProvider>();
+}
+else
+{
+  builder.Services.AddScoped<IPaymentProvider, ManualPaymentProvider>();
+}
+
 var app = builder.Build();
 
-// 🔹 APPLY MIGRATIONS AUTOMATICALLY (this was missing)
+// 🔹 APPLY MIGRATIONS AUTOMATICALLY
 app.MigrateDb();
 
 // Configure the HTTP request pipeline.
@@ -67,6 +82,7 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 app.UseMiddleware<ExceptionMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
