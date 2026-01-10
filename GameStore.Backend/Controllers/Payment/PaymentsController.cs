@@ -21,7 +21,7 @@ namespace GameStore.Backend.Controllers.Payment
             var userContext = UserContextHelper.GetUserContext(User);
             var payment = await _paymentService.StartPaymentAsync(orderId, userContext.UserId);
 
-            return Ok(BaseResponse<PaymentResultDto>.Ok(payment, "Starting Patyment"));
+            return Ok(BaseResponse<PaymentResultDto>.Ok(payment, "Starting Payment Successfully"));
         }
 
         [HttpPost("confirm/{providerPaymentId}")]
@@ -79,6 +79,6 @@ namespace GameStore.Backend.Controllers.Payment
                     .Ok(history, "Order payment history fetched successfully")
             );
         }
-
+        
     }
 }
