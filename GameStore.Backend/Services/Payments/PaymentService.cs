@@ -134,4 +134,76 @@ public class PaymentService(GameStoreContext context, ILogger<PaymentService> lo
         };
     }
 
+    public async Task<RetryPaymentDto> RetryPaymentAsync(int orderId, int userId)
+    {
+        var order = await _context.Orders.Include(o => o.Payments).FirstOrDefaultAsync(o => o.UserId == userId && o.Id == orderId);
+        if (order == null)
+            throw new InvalidOperationException("No Orders Found");
+        if (order.Payments == null || order.Payments == null)
+            throw new InvalidOperationException("No previous payment found to retry");
+
+        var lastPayment = order.Payments.OrderByDescending(p => p.CreatedAt).First();
+
+        if (lastPayment.Status != PaymentStatus.Failed.ToString())
+            throw new InvalidOperationException("Only failed payments can be retried");
+        var newPayment = new Payment
+        {
+            OrderId = orderId,
+            UserId = userId,
+            Amount = order.TotalAmount,
+            CreatedAt = DateTime.UtcNow,
+            Status = PaymentStatus.Pending.ToString(),
+            Provider = lastPayment.Provider,
+            ProviderPaymentId = lastPayment.ProviderPaymentId,
+            CompletedAt = null
+        };
+        _context.Payments.Add(newPayment);
+        await _context.SaveChangesAsync();
+
+        return new RetryPaymentDto
+        {
+            ProviderPaymentId = newPayment.ProviderPaymentId
+
+        };
+    }
+
+    public async Task<List<PaymentHistoryItemDto>> GetMyPaymentsAsync(int userId)
+    {
+        var payment = await _context.Payments.Where(p => p.UserId == userId).OrderByDescending(p => p.CompletedAt).ToListAsync();
+        return payment.Select(p => new PaymentHistoryItemDto
+        {
+            PaymentId = p.Id,
+            OrderId = p.OrderId,
+            Amount = p.Amount,
+            Provider = p.Provider,
+            Status = p.Status,
+            FailureReason = p.FailureReason,
+            CreatedAt = p.CreatedAt,
+            CompletedAt = p.CompletedAt
+        }).ToList();
+    }
+
+    public async Task<PaymentHistoryDto> GetOrderPaymentsAsync(int userId, int orderId)
+    {
+        var payments = await _context.Payments
+            .Where(p => p.UserId == userId && p.OrderId == orderId)
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync();
+
+        return new PaymentHistoryDto
+        {
+            OrderId = orderId,
+            Payments = payments.Select(p => new PaymentHistoryItemDto
+            {
+                PaymentId = p.Id,
+                OrderId = p.OrderId,
+                Amount = p.Amount,
+                Provider = p.Provider,
+                Status = p.Status,
+                FailureReason = p.FailureReason,
+                CreatedAt = p.CreatedAt,
+                CompletedAt = p.CompletedAt
+            }).ToList()
+        };
+    }
 }

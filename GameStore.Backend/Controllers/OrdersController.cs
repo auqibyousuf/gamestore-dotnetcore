@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GameStore.Backend.Dtos.Common;
 using GameStore.Backend.Dtos.Orders;
+using GameStore.Backend.Dtos.Orders.Timeline;
 using GameStore.Backend.Helpers;
 using GameStore.Backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -42,6 +43,8 @@ namespace GameStore.Backend.Controllers
             var orderById = await _orderService.GetOrderByIdAsync(userContext.UserId, Id, userContext.Role);
             return Ok(BaseResponse<OrderResponseDto>.Ok(orderById, "Order Fetched Successfully"));
         }
+
+
         [Authorize(Roles = "Admin")]
         [HttpPost("{orderId}/mark-paid")]
         public async Task<ActionResult> MarkPaid(int orderId)
@@ -65,6 +68,25 @@ namespace GameStore.Backend.Controllers
                 )
             );
 
+        }
+
+        [HttpPost("{orderId}/timeline")]
+        public async Task<IActionResult> GetOrderTimeline(int orderId)
+        {
+            var userContext = UserContextHelper.GetUserContext(User);
+
+            var timeline = await _orderService.GetOrderTimelineAsync(
+                orderId,
+                userContext.UserId,
+                userContext.Role
+            );
+
+            return Ok(
+                BaseResponse<List<TimelineDto>>.Ok(
+                    timeline,
+                    "Order timeline fetched successfully"
+                )
+            );
         }
     }
 }
