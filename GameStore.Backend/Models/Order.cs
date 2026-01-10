@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using GameStore.Backend.Enums;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,6 +8,8 @@ namespace GameStore.Backend.Models;
 
 public class Order
 {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
     public int UserId { get; set; }
     public User User { get; set; } = null!;
