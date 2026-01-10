@@ -9,6 +9,7 @@ using GameStore.Backend.Auth;
 using GameStore.Backend.Services;
 using GameStore.Backend.Services.Payments;
 using GameStore.Backend.Settings;
+using GameStore.Backend.Data.Migrations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,6 @@ builder.AddGameStoreDb();
 // Built-in OpenAPI
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<GameStoreContext>(options => options.UseSqlite("Data Source=GameStore.db"));
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddAuthentication(options =>
 {
@@ -67,7 +67,6 @@ else
 {
   builder.Services.AddScoped<IPaymentProvider, ManualPaymentProvider>();
 }
-
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY
