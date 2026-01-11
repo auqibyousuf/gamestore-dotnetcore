@@ -50,12 +50,12 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
-
 builder.Services.AddScoped<BasketService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<PaymentService>();
-
+builder.Services.AddScoped<GameService>();
 builder.Services.Configure<RazorSettings>(builder.Configuration.GetSection("Razorpay"));
 
 var paymentProvider = builder.Configuration["Payment:Provider"];

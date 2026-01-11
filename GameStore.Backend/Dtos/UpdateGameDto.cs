@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using GameStore.Backend.Models;
 
 namespace GameStore.Backend.Dtos;
 
@@ -16,4 +17,6 @@ public class UpdateGameDto
 
   [Required]
   public int GenreID { get; set; }
+
+  // public List<UpdateGameMediaDto> Media { get; set; } = [];
 }
