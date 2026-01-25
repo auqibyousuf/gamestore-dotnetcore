@@ -23,7 +23,7 @@ jobs:
       run: dotnet restore
 
     - name: Build solution
-      run: dotnet build GameStore.sln --no-restore
+      run: dotnet build GameStore.slnx --no-restore
 
     - name: Run tests
-      run: dotnet test GameStore.sln --no-build --verbosity normal
+      run: dotnet test GameStore.slnx --no-build --verbosity normal
