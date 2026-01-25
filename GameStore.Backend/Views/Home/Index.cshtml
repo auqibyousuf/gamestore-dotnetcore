@@ -1,0 +1,23 @@
+﻿@using GameStore.Backend.Dtos
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model List<GameListDto>
+@{
+    ViewData["Title"] = "GameStore Home";
+}
+
+<h1>Welcome to GameStore 🎮</h1>
+<p>Games List</p>
+
+<ul>
+
+    @foreach (var game in Model)
+    {
+        <li>
+            <strong>@game.Name</strong>
+            USD @game.Price
+            <p>@game.GenreName</p>
+        </li>
+    }
+</ul>

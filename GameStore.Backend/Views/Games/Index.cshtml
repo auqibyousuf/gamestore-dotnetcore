@@ -1,0 +1,55 @@
+﻿@using GameStore.Backend
+@using GameStore.Backend.ViewModels
+
+<h1>Game Store 🎮</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div style="color: green; margin-bottom: 10px;">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@Html.ValidationSummary(true, "", new { style = "color:red" })
+
+<ul>
+@foreach (var game in Model.Games)
+{
+    <li>
+        <strong>@game.Name</strong> — USD @game.Price
+        <div>@game.GenreName</div>
+    </li>
+}
+</ul>
+
+<hr />
+
+<h2>Add Game</h2>
+
+<form asp-action="CreateGame" method="post">
+    <div>
+        <label asp-for="CreateGame.Name"></label>
+        <input asp-for="CreateGame.Name" />
+        <span asp-validation-for="CreateGame.Name"></span>
+    </div>
+
+    <div>
+        <label asp-for="CreateGame.Price"></label>
+        <input asp-for="CreateGame.Price" />
+        <span asp-validation-for="CreateGame.Price"></span>
+    </div>
+
+    <div>
+        <label asp-for="CreateGame.ReleaseDate"></label>
+        <input asp-for="CreateGame.ReleaseDate" type="date" />
+        <span asp-validation-for="CreateGame.ReleaseDate"></span>
+    </div>
+
+    <div>
+        <label asp-for="CreateGame.GenreID"></label>
+        <input asp-for="CreateGame.GenreID" />
+        <span asp-validation-for="CreateGame.GenreID"></span>
+    </div>
+
+    <button type="submit">Save</button>
+</form>

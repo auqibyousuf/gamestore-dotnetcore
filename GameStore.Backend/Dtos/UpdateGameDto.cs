@@ -13,7 +13,7 @@ public class UpdateGameDto
   public decimal Price { get; set; }
 
   [Required]
-  public DateOnly ReleaseDate { get; set; }
+  public DateTime ReleaseDate { get; set; }
 
   [Required]
   public int GenreID { get; set; }

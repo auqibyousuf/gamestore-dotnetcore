@@ -1,5 +1,3 @@
-using GameStore.Backend.Data;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +12,7 @@ using GameStore.Backend.Data.Migrations;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 
 
 // 🔹 ADD DB + SEEDING (this was missing)
@@ -47,7 +45,6 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
 
-
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddMemoryCache();
@@ -67,6 +64,8 @@ else
 {
   builder.Services.AddScoped<IPaymentProvider, ManualPaymentProvider>();
 }
+
+
 var app = builder.Build();
 
 // 🔹 APPLY MIGRATIONS AUTOMATICALLY
@@ -87,4 +86,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.UseStaticFiles();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Games}/{action=Index}/{id?}");
+
 app.Run();

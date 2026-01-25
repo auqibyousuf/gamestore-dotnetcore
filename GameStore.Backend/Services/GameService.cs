@@ -136,6 +136,7 @@ public class GameService(GameStoreContext context, ILogger<GameService> logger, 
             ID = game.ID,
             Price = game.Price,
             GenreName = game.Genre!.Name,
+            ReleaseDate = game.ReleaseDate,
             ImageUrl = game.Media.Where(m => m.IsPrimary).Select(m => m.Url).FirstOrDefault()
         }).ToListAsync();
 

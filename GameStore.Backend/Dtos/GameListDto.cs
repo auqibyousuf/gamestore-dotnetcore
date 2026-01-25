@@ -9,4 +9,5 @@ public class GameListDto
     public decimal Price { get; set; }
     public string GenreName { get; set; } = "";
     public string? ImageUrl { get; set; }
+    public DateTime ReleaseDate { get; set; }
 }

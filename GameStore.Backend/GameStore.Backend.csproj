@@ -24,6 +24,8 @@
     <Folder Include="Dtos/Orders/" />
     <Folder Include="Helpers/" />
     <Folder Include="Middleware/" />
+    <Folder Include="Views/Games/" />
+    <Folder Include="Views/Home/" />
     <Folder Include="wwwroot/" />
   </ItemGroup>
 
