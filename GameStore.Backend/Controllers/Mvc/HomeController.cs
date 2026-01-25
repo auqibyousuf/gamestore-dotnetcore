@@ -6,7 +6,7 @@ namespace GameStore.Backend.Controllers
     public class HomeController(GameService gameService) : Controller
     {
         private readonly GameService _gameService = gameService;
-        
+
         // GET: HomeController
         public async Task<IActionResult> Index()
         {

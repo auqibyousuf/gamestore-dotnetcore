@@ -17,7 +17,7 @@ namespace GameStore.Backend.Controllers
         private readonly BasketService _basketService = basketService;
         private readonly ILogger<BasketController> _logger = logger;
         private readonly GameStoreContext _context = context;
-        
+
 
         [HttpGet]
         public async Task<IActionResult> GetByBasket()

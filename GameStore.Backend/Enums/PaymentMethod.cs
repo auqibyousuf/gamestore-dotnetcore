@@ -5,8 +5,8 @@ namespace GameStore.Backend.Enums;
 
 public enum PaymentMethod
 {
-    None ,
-    Card ,
+    None,
+    Card,
     Upi,
     NetBanking,
     Wallet

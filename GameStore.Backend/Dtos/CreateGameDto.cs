@@ -5,15 +5,15 @@ namespace GameStore.Backend.Dtos;
 
 public class CreateGameDto
 {
-  [Required]
-  public string Name { get; set; } = null!;
+    [Required]
+    public string Name { get; set; } = null!;
 
-  [Range(1, double.MaxValue)]
-  public decimal Price { get; set; }
+    [Range(1, double.MaxValue)]
+    public decimal Price { get; set; }
 
-  [Required]
-  public DateTime ReleaseDate { get; set; }
+    [Required]
+    public DateTime ReleaseDate { get; set; }
 
-  [Required]
-  public int GenreID { get; set; }
+    [Required]
+    public int GenreID { get; set; }
 }

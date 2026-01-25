@@ -1,13 +1,13 @@
-using Scalar.AspNetCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using GameStore.Backend.Middleware;
 using GameStore.Backend.Auth;
+using GameStore.Backend.Data.Migrations;
+using GameStore.Backend.Middleware;
 using GameStore.Backend.Services;
 using GameStore.Backend.Services.Payments;
 using GameStore.Backend.Settings;
-using GameStore.Backend.Data.Migrations;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,21 +24,21 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddAuthentication(options =>
 {
-  options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-  options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
-  options.TokenValidationParameters = new TokenValidationParameters
-  {
-    ValidateAudience = true,
-    ValidateIssuer = true,
-    ValidateLifetime = true,
-    ValidateIssuerSigningKey = true,
-    ValidAudience = builder.Configuration["Jwt:Audience"],
-    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateAudience = true,
+        ValidateIssuer = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
 
-  };
+    };
 });
 
 builder.Services.AddAuthorizationBuilder()
@@ -58,11 +58,11 @@ builder.Services.Configure<RazorSettings>(builder.Configuration.GetSection("Razo
 var paymentProvider = builder.Configuration["Payment:Provider"];
 if (paymentProvider == "Razorpay")
 {
-  builder.Services.AddScoped<IPaymentProvider, RazorPaymentProvider>();
+    builder.Services.AddScoped<IPaymentProvider, RazorPaymentProvider>();
 }
 else
 {
-  builder.Services.AddScoped<IPaymentProvider, ManualPaymentProvider>();
+    builder.Services.AddScoped<IPaymentProvider, ManualPaymentProvider>();
 }
 
 
@@ -74,8 +74,8 @@ app.MigrateDb();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-  app.MapOpenApi();
-  app.MapScalarApiReference(); // exposes Scalar UI
+    app.MapOpenApi();
+    app.MapScalarApiReference(); // exposes Scalar UI
 }
 
 // app.UseHttpsRedirection();

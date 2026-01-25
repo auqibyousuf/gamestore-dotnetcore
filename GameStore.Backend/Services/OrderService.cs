@@ -345,7 +345,7 @@ public class OrderService(GameStoreContext context, ILogger<OrderService> logger
             EventType = "ORDER_CREATED",
             Status = order.PaymentStatus,
             Provider = "N/A",
-            Amount=order.TotalAmount,
+            Amount = order.TotalAmount,
             Message = "Order Created"
         });
 
@@ -355,7 +355,7 @@ public class OrderService(GameStoreContext context, ILogger<OrderService> logger
             string eventType;
             string message;
 
-            if(payment.Status == PaymentStatus.Pending.ToString())
+            if (payment.Status == PaymentStatus.Pending.ToString())
             {
                 eventType = "PAYMENT_INITIATED";
                 message = "Payment Initiated";
@@ -375,7 +375,7 @@ public class OrderService(GameStoreContext context, ILogger<OrderService> logger
             }
             else
             {
-                eventType= "PAYMENT_UNKNOWN";
+                eventType = "PAYMENT_UNKNOWN";
                 message = "Unknown Payment state";
             }
             timeline.Add(new TimelineDto

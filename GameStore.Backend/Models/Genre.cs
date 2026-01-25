@@ -5,8 +5,8 @@ namespace GameStore.Backend.Models;
 
 public class Genre
 {
-  [Key]
-  [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-  public int ID { get; set; }
-    public required string  Name { get; set; }
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int ID { get; set; }
+    public required string Name { get; set; }
 }
